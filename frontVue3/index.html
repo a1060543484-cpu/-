@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>酆都阴司 · AI 智能地府管理系统</title>
+<meta name="description" content="AI 智能地府管理系统 —— 多 Agent 编排的阴司办案平台">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☯</text></svg>">
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<div id="root"></div>
+<div id="toast"></div>
+<div id="modal-root"></div>
+
+<script src="js/core.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+
+<script src="js/pages/dashboard.js"></script>
+<script src="js/pages/cases.js"></script>
+<script src="js/pages/approvals.js"></script>
+<script src="js/pages/deceased.js"></script>
+<script src="js/pages/evidence.js"></script>
+<script src="js/pages/chat.js"></script>
+<script src="js/pages/knowledge.js"></script>
+<script src="js/pages/agents.js"></script>
+<script src="js/pages/logs.js"></script>
+<script src="js/pages/settings.js"></script>
+
+<script>
+/* 兜底：若脚本顺序异常导致 boot 未触发，补一次 */
+window.addEventListener('load', function () {
+  if (!document.getElementById('root').firstChild && window.App) {
+    try { window.App && Mini.mount(App, document.getElementById('root')); } catch (e) { console.error(e); }
+  }
+});
+</script>
+</body>
+</html>

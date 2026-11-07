@@ -1,0 +1,25 @@
+# 地府阴差管理系统 · 可选依赖
+#
+# 🔴 这份文件里**没有一项是必须的**：项目本来就是纯标准库实现，
+#    `./start.sh` 不装任何东西也能跑，流程引擎会自动降级到内置状态机。
+#
+# 装上 langgraph 之后，run_flow 会改由 StateGraph 真正驱动节点与条件边
+# （而不是只导出一份"等价图定义"摆着看）。可用 DIFU_FLOW_ENGINE 控制：
+#   DIFU_FLOW_ENGINE=auto      装了就用（默认）
+#   DIFU_FLOW_ENGINE=langgraph 强制用（没装会降级并打印提示）
+#   DIFU_FLOW_ENGINE=builtin   强制纯标准库，方便教学对比 / 排错
+#
+# 安装示例（Linux / macOS）：
+#   python3 -m venv .venv
+#   ./.venv/bin/pip install -r requirements.txt
+#   PYTHON=./.venv/bin/python ./start.sh
+#
+# 版本下限说明：>=1.2 才有本实现依赖的 TypedDict reducer 语义与
+# `config={"recursion_limit": ...}` 行为；<2 是为了避开未来大版本破坏性变更。
+# 实测通过版本：langgraph 1.2.11（Python 3.14.5 / 3.13.12，双引擎回归 0 差异）。
+langgraph>=1.2,<2
+
+# 可选：把 LangGraph 的 super-step 检查点落到 SQLite（默认用进程内 MemorySaver，
+# 业务状态本来就持久化在项目自己的 checkpoint 表里，重启不丢）。
+# 装了之后 langgraph_engine._make_checkpointer() 会自动切过去，代码零改动。
+# langgraph-checkpoint-sqlite>=3,<4

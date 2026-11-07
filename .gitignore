@@ -1,0 +1,59 @@
+# 运行时数据（pid / 日志 / 随机密钥 / 登录口令 / 大模型 Key）
+.run/
+_backup/
+
+# 数据库与备份（difu.db 里曾有明文 API Key，绝不进 git）
+FastAPI/data/
+FastAPI/backups/
+FastAPI/uploads/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# 私密配置
+*.env
+secrets.env
+credentials.txt
+app_secret
+revoked_tokens.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.log
+*.pid
+.DS_Store
+
+# 虚拟环境（requirements.txt 的安装示例会在项目内建 .venv，必须挡住）
+.venv/
+venv/
+env/
+ENV/
+
+# 编辑器 / 补丁残留
+.idea/
+.vscode/
+*.swp
+*.bak
+*.bak_*
+*.orig
+*.rej
+*~
+
+# 构建与缓存产物（本项目免构建，但防误提交）
+node_modules/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# 压缩包与临时归档
+*.zip
+*.7z
+*.tar.gz
+*.tgz
