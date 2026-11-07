@@ -300,8 +300,17 @@ def start_case(case_id: int) -> dict:
     clear_checkpoint(case)
     db.update("case_file", {"status": "accepted", "current_node": "intake", "progress": 10,
                        "flow_state": db.jdumps({}), "updated_at": db.now()}, "id=?", (case_id,))
-    security.agent_log(case_id, "system", "流程引擎", "intake", "启动流程",
-                       f"thread_id={thread_id(case)}，引擎={engine_name()}", model=engine_name())
+    # 给人看的一句话只讲「谁在办、断了能不能续」；thread_id 与引擎标识属于
+    # 排障信息，放进 tool_output，由前端折叠在「技术详情」里，不再糊在脸上。
+    used = engine_name()
+    label = "LangGraph 编排引擎" if used == "langgraph" else "内置状态机（离线可用）"
+    security.agent_log(
+        case_id, "system", "流程引擎", "intake", "启动流程",
+        f"本次办案由{label}接手，卷宗流转轨迹已单独存档，"
+        "中途挂起或服务重启后都能从原处继续。",
+        model=used,
+        tool_output={"thread_id": thread_id(case), "engine": used},
+    )
     return run_flow(case_id, start="intake")
 
 
@@ -346,5 +355,5 @@ def simulate_expiry(case_id: int) -> dict:
     db.update("execution", {"end_date": db.now(), "remaining_days": 0, "status": "已期满",
                             "updated_at": db.now()}, "id=?", (ex["id"],))
     security.agent_log(case_id, "system", "定时巡检", "execution", "模拟期满",
-                       "刑期置为已满，触发 continue_flow 从检查点续跑", model="apscheduler替代")
+                       "刑期已记为期满，从上次中断处继续办理后续流程。", model="定时巡检")
     return continue_flow(case_id, force=True)

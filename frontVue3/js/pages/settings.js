@@ -3,7 +3,7 @@
  * ============================================================ */
 (function (global) {
   'use strict';
-  var h = global.h, UI = global.UI, API = global.API;
+  var h = global.h, UI = global.UI, API = global.API, Narrate = global.Narrate;
 
   var DICT_NAMES = {
     crime: '罪名', punishment: '刑罚', realm: '六道', jurisdiction: '辖区',
@@ -232,7 +232,7 @@
               ps.busy = true;
               UI.toast('执行中…');
               s[3]().then(function (r) {
-                UI.toast('完成：' + (typeof r === 'string' ? r : JSON.stringify(r).slice(0, 80)));
+                UI.toast('完成：' + Narrate.result(r));
                 self.load(ps);
                 if (App.loadNotify) App.loadNotify();
               }).catch(function (e) { UI.toast(e.message, 'err'); })
@@ -271,7 +271,8 @@
               h('div', { class: 'value', style: { fontSize: '15px' } }, sys.python || '—'),
               h('div', { class: 'hint' }, '标准库运行')),
             h('div', { class: 'kpi g' }, h('div', { class: 'label' }, '流程引擎'),
-              h('div', { class: 'value', style: { fontSize: '15px' } }, sys.engine || '—'),
+              h('div', { class: 'value', style: { fontSize: '15px' } },
+                sys.engine ? Narrate.engine(sys.engine) : '—'),
               h('div', { class: 'hint' }, sys.engine_note || '如实报告实际执行引擎')),
             h('div', { class: 'kpi b' }, h('div', { class: 'label' }, '数据库'),
               h('div', { class: 'value', style: { fontSize: '15px' } }, sys.db || '—'),
@@ -288,10 +289,10 @@
             Object.keys(degrade).filter(function (k) {
               return typeof degrade[k] === 'boolean';
             }).map(function (k) {
-              return UI.tag(k + (degrade[k] ? ' · 降级' : ' · 已安装'),
+              return UI.tag(Narrate.depend(k) + (degrade[k] ? ' · 降级' : ' · 已安装'),
                 degrade[k] ? 'orange' : 'green');
             }).concat([
-              UI.tag('实际引擎 · ' + (degrade.engine || 'builtin-state-machine'), 'gray'),
+              UI.tag('实际引擎 · ' + Narrate.engine(degrade.engine || 'builtin-state-machine'), 'gray'),
               UI.tag('LangGraph · ' + (degrade.langgraph_used ? '执行中'
                 : (degrade.langgraph_installed ? '已安装但未使用' : '未安装')), 'gray')
             ]))),

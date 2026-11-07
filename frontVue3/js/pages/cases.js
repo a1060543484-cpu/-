@@ -3,7 +3,7 @@
  * ============================================================ */
 (function (global) {
   'use strict';
-  var h = global.h, UI = global.UI, API = global.API;
+  var h = global.h, UI = global.UI, API = global.API, Narrate = global.Narrate;
 
   var STATUS_CODES = ['pending', 'accepted', 'judging', 'reviewing', 'executing',
     'reincarnating', 'completed', 'suspended', 'rejected'];
@@ -141,14 +141,22 @@
     function flowTab() {
       var items = [];
       (d.agent_logs || []).slice().reverse().forEach(function (g) {
+        /* 时间线默认只讲人话：谁、做了什么、结论是什么。
+           机器标识与原始字典不删，折叠在「查看技术详情」里 ——
+           办案时不被字典糊脸，排障时点开仍能逐字节核对。 */
         items.push(h('div', { class: 'tl-item' },
           h('div', { class: 'hd' },
             UI.tag(g.agent_name || g.agent_code, 'gold'),
-            h('span', null, g.action || ''),
+            h('span', null, Narrate.action(g.action || '')),
             h('span', { class: 'tm' }, Mini.fmtTime(g.created_at, true))),
-          g.thought ? h('div', { class: 'bd' }, g.thought) : null,
-          g.tool_name ? h('div', { class: 'bd mono' },
-            '⚙ ' + g.tool_name + ' → ' + String(g.tool_output || '').slice(0, 160)) : null));
+          g.thought ? h('div', { class: 'bd' }, Narrate.thought(g.thought)) : null,
+          g.tool_name
+            ? h('div', { class: 'bd' },
+                Narrate.tool(g.tool_name, g.tool_output),
+                Narrate.details(g.tool_output, g, '__flowDetail'))
+            /* 只有内部记录、没有具体工具时（如启动流程），别硬凑一句废话，
+               留一个折叠入口即可查到 thread_id / 引擎标识。 */
+            : Narrate.details(g.tool_output, g, '__flowDetail')));
       });
       return items.length ? h('div', { class: 'timeline' }, items) : UI.empty('暂无流转记录', '⚖');
     }
@@ -249,13 +257,18 @@
         return h('div', { class: 'card', style: { background: 'var(--bg-3)', marginBottom: '10px' } },
           h('div', { style: { display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap' } },
             UI.tag(g.agent_name, 'purple'),
-            h('span', { style: { fontSize: '12px', color: 'var(--text-2)' } }, g.action || ''),
-            g.model ? UI.tag(g.model, 'gray') : null,
+            h('span', { style: { fontSize: '12px', color: 'var(--text-2)' } }, Narrate.action(g.action || '')),
+            g.model ? UI.tag(Narrate.model(g.model), 'gray') : null,
             h('span', { style: { marginLeft: 'auto', fontSize: '11px', color: 'var(--text-3)' } },
               (g.latency_ms || 0) + 'ms · ' + Mini.fmtTime(g.created_at, true))),
-          g.thought ? h('div', { style: { fontSize: '12px', color: 'var(--text-2)', lineHeight: 1.7 } }, g.thought) : null,
-          g.tool_name ? h('pre', { class: 'mono', style: { marginTop: '6px' } },
-            g.tool_name + '\n→ ' + String(g.tool_output || '').slice(0, 220)) : null);
+          g.thought ? h('div', { style: { fontSize: '12px', color: 'var(--text-2)', lineHeight: 1.7 } },
+            Narrate.thought(g.thought)) : null,
+          g.tool_name
+            ? h('div', { style: { marginTop: '6px', fontSize: '12px', color: 'var(--text-2)', lineHeight: 1.7 } },
+                Narrate.tool(g.tool_name, g.tool_output))
+            : null,
+          /* 原始 JSON 一律收进折叠区，不再整段 pre 糊在卡片上 */
+          Narrate.details(g.tool_output, g, '__logDetail'));
       }));
     }
 

@@ -3,7 +3,7 @@
  * ============================================================ */
 (function (global) {
   'use strict';
-  var h = global.h, UI = global.UI, API = global.API;
+  var h = global.h, UI = global.UI, API = global.API, Narrate = global.Narrate;
 
   var NODE_ICONS = {
     intake: '①', judge: '②', review: '③', execution: '④',
@@ -60,9 +60,9 @@
         { label: '已入轮回', value: ov.reincarnations || 0, hint: '服刑中 ' + (by.executing || 0) + ' · 判定中 ' + (by.reincarnating || 0), cls: 'g' },
         { label: 'Agent 日志', value: ov.agent_logs || 0, hint: '人工审计 ' + (ov.audit_logs || 0), cls: '' },
         { label: '知识切片', value: ov.chunks || 0, hint: 'RAG 检索单元', cls: 'b' },
-        { label: '编排引擎', value: ov.engine === 'langgraph' ? 'LG' : 'SM',
-          hint: (ov.degrade && ov.degrade.langgraph_used === false)
-            ? '内置状态机（langgraph 未参与执行）' : (ov.engine || 'builtin-state-machine'), cls: 'p' }
+        /* 原来是 LG / SM 两个缩写，谁也猜不出是什么；直接写人话 */
+        { label: '编排引擎', value: ov.engine === 'langgraph' ? '图谱编排' : '内置状态机',
+          hint: Narrate.engine(ov.engine), cls: 'p' }
       ];
 
       var realms = ov.by_realm || {};
@@ -86,7 +86,7 @@
         h('div', { class: 'card' },
           h('div', { class: 'card-title' },
             '七殿会审流程',
-            h('span', { class: 'sub' }, 'StateGraph · ' + (ov.engine || 'builtin-state-machine')),
+            h('span', { class: 'sub' }, '当前由' + Narrate.engine(ov.engine) + '驱动'),
             h('div', { class: 'spacer' }),
             UI.btn('查看编排', 'sm ghost', function () { App.go('agents'); })),
           flowStrip(flow, cur)),
@@ -126,21 +126,20 @@
               }).map(function (k) {
                 var degraded = degrade[k];   /* true = 缺失依赖，已降级 */
                 return h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px' } },
-                  h('span', { style: { width: '110px', color: 'var(--text-3)' } }, k),
+                  h('span', { style: { width: '110px', color: 'var(--text-3)' } }, Narrate.depend(k)),
                   UI.tag(degraded ? '降级' : '已安装', degraded ? 'orange' : 'green'),
                   h('span', { style: { color: 'var(--text-3)', fontSize: '11px' } },
                     degraded ? '走内置兜底实现' : '启用原生能力'));
               }),
+              /* 说明文字原来塞满 MemorySaver / checkpoint / APScheduler 这些内部名词，
+                 改成讲「会影响办案的后果」，技术细节留给设置页的降级矩阵按需展开。 */
               h('div', { style: { marginTop: '10px', fontSize: '11px', color: 'var(--text-3)', lineHeight: 1.8 } },
                 degrade.langgraph_used
-                  ? '说明：LangGraph StateGraph 正在驱动节点与条件边；检查点由 ' +
-                    (degrade.checkpointer || 'MemorySaver') + ' 记录，业务状态持久化在项目 checkpoint 表，重启可续跑。'
-                  : '说明：未启用 LangGraph，办案流程跑内置状态机（纯标准库）；',
-                degrade.langgraph_used ? ''
-                  : 'APScheduler / FastAPI 等缺失时也会自动切换到线程调度器与自研 HTTP 服务，业务链路不受影响。'),
+                  ? '说明：目前由 LangGraph 编排各殿的流转，每一步进度都会自动存档，服务重启后能从原处接着办。'
+                  : '说明：目前由内置状态机按顺序推进，不依赖外部组件；缺少定时或网络组件时会自动换成本地实现，办案不受影响。'),
               h('div', { style: { marginTop: '6px', fontSize: '11px', color: 'var(--text-3)' } },
-                '实际引擎 · ' + (degrade.engine || 'builtin-state-machine') +
-                '　|　引擎开关 · ' + (degrade.flow_engine || 'auto')))))
+                '实际引擎 · ' + Narrate.engine(degrade.engine || 'builtin-state-machine') +
+                '　|　运行模式 · ' + Narrate.flowMode(degrade.flow_engine || 'auto')))))
       ];
     },
 

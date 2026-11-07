@@ -3,7 +3,7 @@
  * ============================================================ */
 (function (global) {
   'use strict';
-  var h = global.h, UI = global.UI, API = global.API;
+  var h = global.h, UI = global.UI, API = global.API, Narrate = global.Narrate;
 
   var NODE_POS = {          // 纵向流式布局的序号
     intake: 1, judge: 2, review: 3, execution: 4,
@@ -39,19 +39,19 @@
 
   function edgeList(edges) {
     return h('div', { style: { marginTop: '10px' } },
-      h('div', { class: 'card-title', style: { fontSize: '12px' } }, '条件边（Conditional Edges）'),
+      h('div', { class: 'card-title', style: { fontSize: '12px' } }, '节点之间的流转条件'),
       (edges || []).map(function (e) {
-        return h('div', { style: { fontSize: '12px', color: 'var(--text-2)', padding: '3px 0' } },
-          h('span', { class: 'mono', style: { color: 'var(--gold)' } }, e.from),
-          h('span', { style: { color: 'var(--text-3)', margin: '0 6px' } }, '──▶'),
-          h('span', { class: 'mono', style: { color: 'var(--cyan)' } }, e.to),
-          h('span', { style: { color: 'var(--text-3)', marginLeft: '10px' } }, '［' + e.label + '］'));
+        /* 原来写的是 intake ──▶ judge 这种英文 key，现在讲成一句人话 */
+        return h('div', { style: { fontSize: '12px', color: 'var(--text-2)', padding: '3px 0', lineHeight: 1.7 } },
+          '从「' + Narrate.node(e.from) + '」' +
+          (e.label ? '在' + e.label + '时' : '') +
+          '，转到「' + Narrate.node(e.to) + '」。');
       }));
   }
 
   global.PAGES.agents = {
     name: 'Agent 编排',
-    sub: 'StateGraph',
+    sub: '节点编排与流转',
     render: function (ps) {
       if (!ps.loaded && !ps.busy) { ps.busy = true; this.load(ps); }
       var g = ps.graph || {};
@@ -64,7 +64,7 @@
         h('div', { class: 'grid grid-2' },
           h('div', { class: 'card' },
             h('div', { class: 'card-title' }, '七殿会审状态图',
-              h('span', { class: 'sub' }, g.engine || ''),
+              h('span', { class: 'sub' }, g.engine ? Narrate.engine(g.engine) : ''),
               h('div', { class: 'spacer' }),
               UI.btn('刷新', 'sm ghost', function () { global.PAGES.agents.load(ps); })),
             h('div', { style: { fontSize: '12px', color: 'var(--text-3)', marginBottom: '10px', lineHeight: 1.7 } },
@@ -88,12 +88,16 @@
                       marginBottom: '6px', borderLeft: '2px solid var(--line-2)'
                     }
                   },
-                    h('div', { style: { display: 'flex', gap: '8px', alignItems: 'center' } },
-                      h('span', { class: 'mono', style: { color: 'var(--gold-2)', fontSize: '12px' } }, t.name),
+                    /* 这里是开发者看的 Schema 区，机器名保留，但先给中文名，
+                       参数不再裸列 (case_id, missing)，改成「需要 N 项参数」+ 可展开原名 */
+                    h('div', { style: { display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' } },
+                      h('span', { style: { color: 'var(--text)', fontSize: '12px' } }, Narrate.toolLabel(t.name)),
+                      h('span', { class: 'mono', style: { color: 'var(--gold-2)', fontSize: '11px' } }, t.name),
                       h('span', { style: { fontSize: '11px', color: 'var(--text-3)' } },
-                        params.length ? '(' + params.join(', ') + ')' : '()')),
+                        params.length ? '需要 ' + params.length + ' 项参数' : '无需参数')),
                     h('div', { style: { fontSize: '11px', color: 'var(--text-3)', marginTop: '2px' } },
-                      t.description));
+                      t.description),
+                    Narrate.details(t.parameters, t, '__paramOpen'));
                 }))),
 
             h('div', { class: 'card' },
@@ -104,11 +108,11 @@
                   return h('div', { style: { fontSize: '12px', padding: '6px 0', borderBottom: '1px solid var(--bg-3)' } },
                     h('div', { style: { display: 'flex', gap: '6px', alignItems: 'center' } },
                       UI.tag(g2.agent_name || g2.agent_code, 'purple'),
-                      h('span', { style: { color: 'var(--text-2)' } }, g2.action || ''),
+                      h('span', { style: { color: 'var(--text-2)' } }, Narrate.action(g2.action || '')),
                       h('span', { style: { marginLeft: 'auto', color: 'var(--text-3)', fontSize: '11px' } },
                         Mini.fmtTime(g2.created_at, true))),
                     h('div', { style: { color: 'var(--text-3)', marginTop: '2px' } },
-                      (g2.thought || '').slice(0, 100)));
+                      Narrate.thought(g2.thought || '').slice(0, 100)));
                 }))
                 : UI.empty('暂无日志', '⚙'))))
       ];

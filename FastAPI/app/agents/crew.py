@@ -155,8 +155,12 @@ class Agent:
     def use(self, ctx: dict, name: str, **kwargs):
         """调工具 + 记录一条 agent_log（工具入参/出参都可回放）。"""
         out = tools.call(name, ctx, **kwargs)
-        self.log(ctx.get("case_id", 0), f"调用工具 {name}",
-                 f"以「{name}」操作业务库", {"model": "tool"},
+        # 工具注册表里本来就写了中文描述，日志直接用它当动作名，
+        # 不再把 "调用工具 evidence.check_material" 这种代码串写给人看。
+        # 机器标识仍完整保留在 tool_name / tool_input / tool_output 里，可回溯。
+        label = tools.TOOLS.get(name, {}).get("description", "业务操作")
+        self.log(ctx.get("case_id", 0), label,
+                 f"已读写业务库，完成「{label}」。", {"model": "tool"},
                  tool_name=name, tool_input=kwargs, tool_output=out)
         return out
 
